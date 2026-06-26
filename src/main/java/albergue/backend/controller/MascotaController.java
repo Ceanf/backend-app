@@ -5,6 +5,7 @@ import albergue.backend.repository.MascotaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/mascotas")
@@ -25,8 +26,8 @@ public class MascotaController {
         return mascotaRepository.save(nuevaMascota);
     }
 
-    @PutMapping("/actualizar/{id}")
-    public Mascota actualizar(@PathVariable Long id, @RequestBody Mascota mascotaActualizada) {
+   @PutMapping("/actualizar/{id}")
+    public Mascota actualizar(@PathVariable Integer id, @RequestBody Mascota mascotaActualizada) {
         return mascotaRepository.findById(id)
                 .map(mascota -> {
                     mascota.setNombre(mascotaActualizada.getNombre());
@@ -34,7 +35,10 @@ public class MascotaController {
                     mascota.setEdad(mascotaActualizada.getEdad());
                     mascota.setNivelEnergia(mascotaActualizada.getNivelEnergia());
                     mascota.setTamano(mascotaActualizada.getTamano());
-                    mascota.setDescripcion(mascotaActualizada.getDescripcion());
+                    
+                    // 👇 Cambiado aquí para que use el campo real de tu modelo Java
+                    mascota.setHistoria(mascotaActualizada.getHistoria());
+                    
                     if (mascotaActualizada.getFotoUrl() != null) {
                         mascota.setFotoUrl(mascotaActualizada.getFotoUrl());
                     }
