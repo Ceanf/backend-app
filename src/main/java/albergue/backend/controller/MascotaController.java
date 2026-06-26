@@ -24,4 +24,25 @@ public class MascotaController {
         // Hibernate se encarga de la relación con Albergue basándose en el ID enviado
         return mascotaRepository.save(nuevaMascota);
     }
+
+    @PutMapping("/actualizar/{id}")
+    public Mascota actualizar(@PathVariable Long id, @RequestBody Mascota mascotaActualizada) {
+        return mascotaRepository.findById(id)
+                .map(mascota -> {
+                    mascota.setNombre(mascotaActualizada.getNombre());
+                    mascota.setRaza(mascotaActualizada.getRaza());
+                    mascota.setEdad(mascotaActualizada.getEdad());
+                    mascota.setNivelEnergia(mascotaActualizada.getNivelEnergia());
+                    mascota.setTamano(mascotaActualizada.getTamano());
+                    mascota.setDescripcion(mascotaActualizada.getDescripcion());
+                    if (mascotaActualizada.getFotoUrl() != null) {
+                        mascota.setFotoUrl(mascotaActualizada.getFotoUrl());
+                    }
+                    return mascotaRepository.save(mascota);
+                })
+                .orElseGet(() -> {
+                    mascotaActualizada.setId(id);
+                    return mascotaRepository.save(mascotaActualizada);
+                });
+    }
 }
