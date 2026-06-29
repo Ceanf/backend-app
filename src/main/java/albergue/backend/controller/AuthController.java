@@ -71,4 +71,37 @@ public class AuthController {
                     .body(Map.of("status", "error", "message", "Error al procesar el registro"));
         }
     }
+
+    // --- ACTUALIZAR PERFIL (AGREGA ESTO) ---
+    @PutMapping("/actualizar")
+    public ResponseEntity<Map<String, Object>> actualizarPerfil(@RequestBody Usuario usuarioModificado) {
+        System.out.println("DEBUG UPDATE: Intentando actualizar a: " + usuarioModificado.getCorreo());
+        
+        try {
+            // Buscamos al usuario existente por su correo
+            Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(usuarioModificado.getCorreo());
+            
+            if (usuarioOpt.isPresent()) {
+                Usuario usuarioExistente = usuarioOpt.get();
+                
+                // Actualizamos únicamente los campos modificados
+                usuarioExistente.setNombre(usuarioModificado.getNombre());
+                
+                // Si en el futuro agregas más campos (teléfono, dirección), se actualizan aquí:
+                // usuarioExistente.setTelefono(usuarioModificado.getTelefono());
+
+                usuarioRepository.save(usuarioExistente); // JPA hace el UPDATE en PostgreSQL
+                System.out.println("DEBUG UPDATE: Usuario actualizado en BD con éxito.");
+                
+                return ResponseEntity.ok(Map.of("status", "success", "message", "Perfil actualizado en BD"));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("status", "error", "message", "Usuario no encontrado"));
+            }
+        } catch (Exception e) {
+            System.out.println("DEBUG UPDATE: Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", "Error interno en el servidor"));
+        }
+    }
 }
