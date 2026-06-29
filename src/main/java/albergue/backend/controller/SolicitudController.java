@@ -51,4 +51,16 @@ public class SolicitudController {
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
+    // 👇 4. NUEVO ENDPOINT: BUSCAR SOLICITUDES EXCLUSIVAS DE UN ADOPTANTE POR CORREO
+    @GetMapping("/usuario")
+    public ResponseEntity<List<Solicitud>> listarPorUsuario(@RequestParam String correo) {
+        System.out.println("DEBUG BACKEND: Buscando solicitudes en PostgreSQL para: " + correo);
+        try {
+            List<Solicitud> misSolicitudes = solicitudRepository.findByUsuarioCorreoIgnoreCase(correo.trim());
+            return ResponseEntity.ok(misSolicitudes);
+        } catch (Exception e) {
+            System.err.println("[ERROR BUSQUEDA SOLICITUDES]: " + e.getMessage());
+            return ResponseEntity.internalServerError().build();
+        }
+    }
 }

@@ -13,4 +13,6 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Integer> {
     
     // 👇 CORREGIDO: Sincronizado exactamente con el campo 'estadoProceso' de tu entidad Solicitud.java
     List<Solicitud> findByEstadoProceso(String estadoProceso);
+    // 👇 AGREGA ESTO: JPA generará automáticamente el SQL para buscar por el correo del objeto Usuario
+    List<Solicitud> findByUsuarioCorreoIgnoreCase(String correo);
 }
