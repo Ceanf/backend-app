@@ -8,11 +8,9 @@ import java.util.List;
 @Repository
 public interface SolicitudRepository extends JpaRepository<Solicitud, Integer> {
     
-    // Codificamos un método extra súper útil por si en el futuro quieres 
-    // listar únicamente las solicitudes de un usuario específico
-    List<Solicitud> findByUsuarioId(Integer usuarioId);
+    // 👇 CORREGIDO: Spring Boot entiende que debe entrar al objeto 'usuario' y sacar su 'id'
+    List<Solicitud> findByUsuario_Id(Integer usuarioId);
     
-    // Método extra útil por si quieres filtrar las solicitudes en base a un estado específico
-    // Por ejemplo: traer solo las que están "Pendiente" para el administrador
-    List<Solicitud> findByEstado(String estado);
+    // 👇 CORREGIDO: Sincronizado exactamente con el campo 'estadoProceso' de tu entidad Solicitud.java
+    List<Solicitud> findByEstadoProceso(String estadoProceso);
 }
