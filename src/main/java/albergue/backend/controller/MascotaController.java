@@ -40,15 +40,18 @@ public class MascotaController {
         }
     }
 
-    // 3. ACTUALIZAR MASCOTA EXISTENTE POR SU ID REAL
-    @PutMapping("/actualizar/{id}")
+   @PutMapping("/actualizar/{id}")
     public ResponseEntity<?> actualizar(@PathVariable Integer id, @RequestBody Mascota mascotaActualizada) {
         System.out.println("DEBUG BACKEND: Solicitud de actualización para Mascota ID: " + id);
         
-        return mascotaRepository.findById(id)
+        return  mascotaRepository.findById(id)
                 .map(mascota -> {
                     mascota.setNombre(mascotaActualizada.getNombre());
                     mascota.setRaza(mascotaActualizada.getRaza());
+                    
+                    // 👇 🚀 ESTA ES LA LÍNEA MÁGICA QUE TE FALTA AGREGAR:
+                    mascota.setEspecie(mascotaActualizada.getEspecie()); 
+                    
                     mascota.setEdad(mascotaActualizada.getEdad());
                     mascota.setNivelEnergia(mascotaActualizada.getNivelEnergia());
                     mascota.setTamano(mascotaActualizada.getTamano());
@@ -58,7 +61,7 @@ public class MascotaController {
                         mascota.setFotoUrl(mascotaActualizada.getFotoUrl());
                     }
                     
-                    Mascota persistida = mascotaRepository.save(mascota);
+                    Mascota  persistida = mascotaRepository.save(mascota);
                     return ResponseEntity.ok(persistida);
                 })
                 .orElseGet(() -> {

@@ -15,6 +15,9 @@ public class Mascota {
 
     private String raza;
     
+    // 👇 🚀 NUEVO CAMPO: Guardará de forma estricta "PERROS", "GATOS" u "OTROS"
+    private String especie; 
+    
     private String edad; // Ej: "Cachorro", "Joven", "Adulto"
     
     private String nivelEnergia;
@@ -40,9 +43,11 @@ public class Mascota {
     public Mascota() {
     }
 
-    public Mascota(String nombre, String raza, String edad, String nivelEnergia, String tamano, String estado, String historia, String fotoUrl, Albergue albergue) {
+    // Constructor completo actualizado con el nuevo parámetro 'especie'
+    public Mascota(String nombre, String raza, String especie, String edad, String nivelEnergia, String tamano, String estado, String historia, String fotoUrl, Albergue albergue) {
         this.nombre = nombre;
         this.raza = raza;
+        this.especie = especie;
         this.edad = edad;
         this.nivelEnergia = nivelEnergia;
         this.tamano = tamano;
@@ -75,6 +80,15 @@ public class Mascota {
 
     public void setRaza(String raza) {
         this.raza = raza;
+    }
+
+    // 👇 Getters y Setters para el nuevo campo 'especie'
+    public String getEspecie() {
+        return especie;
+    }
+
+    public void setEspecie(String especie) {
+        this.especie = especie;
     }
 
     public String getEdad() {
