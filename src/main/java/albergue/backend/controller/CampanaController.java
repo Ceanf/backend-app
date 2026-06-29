@@ -5,6 +5,8 @@ import albergue.backend.model.Donacion;
 import albergue.backend.model.Usuario;
 import albergue.backend.repository.CampanaRepository;
 import albergue.backend.repository.DonacionRepository;
+import albergue.backend.repository.UsuarioRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,10 +26,12 @@ public class CampanaController {
 
     @Autowired
     private DonacionRepository donationRepository;
-
+    @Autowired
+    private UsuarioRepository usuarioRepository; // Cambia el nombre según cómo se llame tu interfaz de usuarios
     // =========================================================================
     // 1. LISTAR TODAS LAS CAMPAÑAS (Para la pestaña de Impacto del Adoptante)
     // =========================================================================
+
     @GetMapping("/listar")
     public List<Campana> listarTodas() {
         return campanaRepository.findAll();
@@ -56,37 +60,38 @@ public class CampanaController {
     // 3. PROCESAR DONACIÓN EN TIEMPO REAL (Lógica Transaccional Combinada)
     // =========================================================================
     @PostMapping("/donar")
-    @Transactional // 🔑 Garantiza consistencia: Actualiza la meta y guarda el historial en un solo bloque
+    @Transactional // 🔑 Mantiene la transacción segura en PostgreSQL
     public ResponseEntity<?> registrarDonacion(@RequestBody Map<String, Object> payload) {
         try {
             Integer campanaId = Integer.parseInt(payload.get("campanaId").toString());
             Integer usuarioId = Integer.parseInt(payload.get("usuarioId").toString());
             Double monto = Double.parseDouble(payload.get("monto").toString());
 
-            // A. Buscamos la campaña afectada en PostgreSQL
+            // 1. Buscamos la campaña de forma segura
             Campana campana = campanaRepository.findById(campanaId)
-                    .orElseThrow(() -> new RuntimeException("Campaña de recaudación no encontrada"));
-            
-            // B. Incrementamos el acumulado con el monto enviado desde el Motorola
+                    .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + campanaId));
+
+            // 2. IMPORTANTE: Inyecta el repositorio de usuarios que ya tienes en tu
+            // proyecto
+            // Si tu repositorio se llama usuarioRepository, búscalo de esta forma:
+            Usuario usuario = usuarioRepository.findById(usuarioId)
+                    .orElseThrow(() -> new RuntimeException("Usuario adoptante no encontrado con ID: " + usuarioId));
+
+            // 3. Incrementamos el monto recaudado acumulado
             campana.setMontoRecaudado(campana.getMontoRecaudado() + monto);
             campanaRepository.save(campana);
 
-            // C. Instanciamos el usuario comprador de manera referencial para la FK
-            Usuario usuario = new Usuario();
-            usuario.setId(usuarioId);
-
-            // D. Registramos la transacción legítima en la tabla 'donaciones'
+            // 4. Registramos la transacción en el historial relacional
             Donacion donacion = new Donacion(monto, usuario, campana);
             donationRepository.save(donacion);
 
             return ResponseEntity.ok(Map.of(
-                "status", "success", 
-                "message", "¡Donación registrada y barra de progreso actualizada con éxito!"
-            ));
+                    "status", "success",
+                    "message", "¡Donación registrada con éxito!"));
         } catch (Exception e) {
-            System.err.println("[ERROR EN TRANSACCIÓN DONAR]: " + e.getMessage());
+            System.err.println("[ERROR EN CONTROLADOR DONAR]: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("status", "error", "message", "Fallo al procesar abono: " + e.getMessage()));
+                    .body(Map.of("status", "error", "message", e.getMessage()));
         }
     }
 
