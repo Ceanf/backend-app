@@ -59,42 +59,56 @@ public class CampanaController {
     // =========================================================================
     // 3. PROCESAR DONACIÓN EN TIEMPO REAL (Lógica Transaccional Combinada)
     // =========================================================================
+   // =========================================================================
+    // 3. PROCESAR DONACIÓN EN TIEMPO REAL (Versión Blindada anti-Error 500)
+    // =========================================================================
     @PostMapping("/donar")
-    @Transactional // 🔑 Mantiene la transacción segura en PostgreSQL
-    public ResponseEntity<?> registrarDonacion(@RequestBody Map<String, Object> payload) {
+    @Transactional 
+    public ResponseEntity<?> registrarDonacion(@RequestBody DonacionRequest request) {
         try {
-            Integer campanaId = Integer.parseInt(payload.get("campanaId").toString());
-            Integer usuarioId = Integer.parseInt(payload.get("usuarioId").toString());
-            Double monto = Double.parseDouble(payload.get("monto").toString());
+            // 1. Buscamos la campaña de forma segura usando el DTO
+            Campana campana = campanaRepository.findById(request.getCampanaId())
+                    .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + request.getCampanaId()));
+            
+            // 2. Buscamos el usuario adoptante de forma segura
+            Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
+                    .orElseThrow(() -> new RuntimeException("Usuario adoptante no encontrado con ID: " + request.getUsuarioId()));
 
-            // 1. Buscamos la campaña de forma segura
-            Campana campana = campanaRepository.findById(campanaId)
-                    .orElseThrow(() -> new RuntimeException("Campaña no encontrada con ID: " + campanaId));
-
-            // 2. IMPORTANTE: Inyecta el repositorio de usuarios que ya tienes en tu
-            // proyecto
-            // Si tu repositorio se llama usuarioRepository, búscalo de esta forma:
-            Usuario usuario = usuarioRepository.findById(usuarioId)
-                    .orElseThrow(() -> new RuntimeException("Usuario adoptante no encontrado con ID: " + usuarioId));
-
-            // 3. Incrementamos el monto recaudado acumulado
-            campana.setMontoRecaudado(campana.getMontoRecaudado() + monto);
+            // 3. Incrementamos el monto acumulado en PostgreSQL
+            campana.setMontoRecaudado(campana.getMontoRecaudado() + request.getMonto());
             campanaRepository.save(campana);
 
-            // 4. Registramos la transacción en el historial relacional
-            Donacion donacion = new Donacion(monto, usuario, campana);
+            // 4. Registramos la transacción legítima en la tabla 'donaciones'
+            Donacion donacion = new Donacion(request.getMonto(), usuario, campana);
             donationRepository.save(donacion);
 
             return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "message", "¡Donación registrada con éxito!"));
+                "status", "success", 
+                "message", "¡Donación registrada y barra de progreso actualizada con éxito!"
+            ));
         } catch (Exception e) {
-            System.err.println("[ERROR EN CONTROLADOR DONAR]: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            System.err.println("[ERROR CRÍTICO EN DONAR]: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("status", "error", "message", e.getMessage()));
         }
     }
 
+    // 👇 🚀 CLASE AUXILIAR (DTO): Colócala al final de tu archivo CampanaController.java (afuera del último corchete de los métodos, pero dentro de la clase principal)
+    public static class DonacionRequest {
+        private Integer campanaId;
+        private Integer usuarioId;
+        private Double monto;
+
+        // Getters y Setters necesarios para Jackson
+        public Integer getCampanaId() { return campanaId; }
+        public void setCampanaId(Integer campanaId) { this.campanaId = campanaId; }
+
+        public Integer getUsuarioId() { return usuarioId; }
+        public void setUsuarioId(Integer usuarioId) { this.usuarioId = usuarioId; }
+
+        public Double getMonto() { return monto; }
+        public void setMonto(Double monto) { this.monto = monto; }
+    }
     // =========================================================================
     // 4. VER HISTORIAL DE DONANTES DE UNA CAMPAÑA (Para el Panel del Albergue)
     // =========================================================================
