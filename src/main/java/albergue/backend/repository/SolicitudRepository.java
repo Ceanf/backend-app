@@ -8,11 +8,12 @@ import java.util.List;
 @Repository
 public interface SolicitudRepository extends JpaRepository<Solicitud, Integer> {
     
-    // 👇 CORREGIDO: Spring Boot entiende que debe entrar al objeto 'usuario' y sacar su 'id'
-    List<Solicitud> findByUsuario_Id(Integer usuarioId);
+    // 🚀 LA CLAVE: Spring Boot mapea esto directo a la FK numérica (usuario_id) en PostgreSQL
+    List<Solicitud> findByUsuarioId(Integer usuarioId);
     
-    // 👇 CORREGIDO: Sincronizado exactamente con el campo 'estadoProceso' de tu entidad Solicitud.java
+    // Sincronizado exactamente con el campo 'estadoProceso' de tu entidad para el panel del administrador
     List<Solicitud> findByEstadoProceso(String estadoProceso);
-    // 👇 AGREGA ESTO: JPA generará automáticamente el SQL para buscar por el correo del objeto Usuario
+    
+    // Mantenemos este por si necesitas buscar postulaciones por correo de respaldo
     List<Solicitud> findByUsuarioCorreoIgnoreCase(String correo);
 }

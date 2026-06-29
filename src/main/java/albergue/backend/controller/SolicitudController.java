@@ -21,11 +21,10 @@ public class SolicitudController {
     public ResponseEntity<?> agregarSolicitud(@RequestBody Solicitud nuevaSolicitud) {
         try {
             nuevaSolicitud.setFechaEnvio(LocalDateTime.now()); // Registra la fecha y hora actual
-            
-            // 👇 CORREGIDO: Usamos el método real de tu entidad Solicitud.java
             nuevaSolicitud.setEstadoProceso("Pendiente"); 
             
             Solicitud guardada = solicitudRepository.save(nuevaSolicitud);
+            System.out.println("DEBUG BACKEND: Solicitud guardada con éxito. ID Solicitud: " + guardada.getId());
             return ResponseEntity.ok(guardada);
         } catch (Exception e) {
             System.err.println("[ERROR AL GUARDAR SOLICITUD]: " + e.getMessage());
@@ -44,22 +43,24 @@ public class SolicitudController {
     public ResponseEntity<?> cambiarEstado(@PathVariable Integer id, @RequestParam String nuevoEstado) {
         return solicitudRepository.findById(id)
                 .map(solicitud -> {
-                    // 👇 CORREGIDO: Usamos el método real de tu entidad Solicitud.java
                     solicitud.setEstadoProceso(nuevoEstado); 
                     solicitudRepository.save(solicitud);
                     return ResponseEntity.ok().body("{\"message\": \"Estado actualizado a " + nuevoEstado + "\"}");
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
-    // 👇 4. NUEVO ENDPOINT: BUSCAR SOLICITUDES EXCLUSIVAS DE UN ADOPTANTE POR CORREO
-    @GetMapping("/usuario")
-    public ResponseEntity<List<Solicitud>> listarPorUsuario(@RequestParam String correo) {
-        System.out.println("DEBUG BACKEND: Buscando solicitudes en PostgreSQL para: " + correo);
+
+    // 👇 4. NUEVO ENDPOINT (CORREGIDO): BUSCAR SOLICITUDES EXCLUSIVAS POR EL ID REAL DEL USUARIO
+    @GetMapping("/usuario/{usuarioId}")
+    public ResponseEntity<List<Solicitud>> listarPorUsuarioId(@PathVariable Integer usuarioId) {
+        System.out.println("DEBUG BACKEND: Buscando solicitudes en PostgreSQL para el Usuario ID: " + usuarioId);
         try {
-            List<Solicitud> misSolicitudes = solicitudRepository.findByUsuarioCorreoIgnoreCase(correo.trim());
+            // 🚀 Buscamos directamente por la llave foránea numérica en Supabase
+            List<Solicitud> misSolicitudes = solicitudRepository.findByUsuarioId(usuarioId);
+            System.out.println("DEBUG BACKEND: Solicitudes encontradas: " + misSolicitudes.size());
             return ResponseEntity.ok(misSolicitudes);
         } catch (Exception e) {
-            System.err.println("[ERROR BUSQUEDA SOLICITUDES]: " + e.getMessage());
+            System.err.println("[ERROR BUSQUEDA SOLICITUDES BY ID]: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

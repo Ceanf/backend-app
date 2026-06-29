@@ -19,7 +19,7 @@ public class AuthController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // --- LOGIN ---
+    // --- LOGIN (CORREGIDO PARA ID REAL) ---
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> credenciales) {
         String email = credenciales.get("email");
@@ -35,6 +35,11 @@ public class AuthController {
             response.put("status", "success");
             response.put("role", user.getRol());
             response.put("nombre", user.getNombre());
+            
+            // 👇 🚀 SOLUCIÓN CLAVE: Devolvemos el ID único de la base de datos
+            response.put("id", user.getId()); 
+            
+            System.out.println("DEBUG LOGIN: Login exitoso. ID enviado al dispositivo: " + user.getId());
             return ResponseEntity.ok(response);
         }
 
@@ -56,15 +61,18 @@ public class AuthController {
 
         // 2. Guardar el nuevo usuario
         try {
-            // Aseguramos que el rol tenga un valor por defecto si no viene en el JSON
             if (nuevoUsuario.getRol() == null || nuevoUsuario.getRol().isEmpty()) {
                 nuevoUsuario.setRol("ROLE_ADOPTANTE");
             }
             
-            usuarioRepository.save(nuevoUsuario);
-            System.out.println("DEBUG REGISTRO: Usuario guardado exitosamente.");
+            Usuario guardado = usuarioRepository.save(nuevoUsuario);
+            System.out.println("DEBUG REGISTRO: Usuario guardado exitosamente con ID: " + guardado.getId());
             
-            return ResponseEntity.ok(Map.of("status", "success", "message", "Usuario registrado exitosamente"));
+            return ResponseEntity.ok(Map.of(
+                "status", "success", 
+                "message", "Usuario registrado exitosamente",
+                "id", guardado.getId() // Retornamos también el ID al registrarse
+            ));
         } catch (Exception e) {
             System.out.println("DEBUG REGISTRO: Error al guardar: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -72,36 +80,37 @@ public class AuthController {
         }
     }
 
-    // --- ACTUALIZAR PERFIL (AGREGA ESTO) ---
-    @PutMapping("/actualizar")
-    public ResponseEntity<Map<String, Object>> actualizarPerfil(@RequestBody Usuario usuarioModificado) {
-        System.out.println("DEBUG UPDATE: Intentando actualizar a: " + usuarioModificado.getCorreo());
+    // --- ACTUALIZAR PERFIL (CORREGIDO PARA TRABAJAR POR ID REAL) ---
+    @PutMapping("/actualizar/{id}")
+    public ResponseEntity<Map<String, Object>> actualizarPerfil(@PathVariable Integer id, @RequestBody Usuario usuarioModificado) {
+        System.out.println("DEBUG UPDATE: Intentando actualizar usuario con ID único: " + id);
         
         try {
-            // Buscamos al usuario existente por su correo
-            Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(usuarioModificado.getCorreo());
+            // 🚀 Buscamos directamente por la llave primaria (ID) en lugar de cadenas de texto
+            Optional<Usuario> usuarioOpt = usuarioRepository.findById(id);
             
             if (usuarioOpt.isPresent()) {
                 Usuario usuarioExistente = usuarioOpt.get();
                 
-                // Actualizamos únicamente los campos modificados
+                // Sincronizamos únicamente los campos permitidos desde el perfil del front
                 usuarioExistente.setNombre(usuarioModificado.getNombre());
+                usuarioExistente.setCorreo(usuarioModificado.getCorreo()); // Permite actualización de correo fluida
                 
-                // Si en el futuro agregas más campos (teléfono, dirección), se actualizan aquí:
+                // Si la entidad maneja más campos, se escalan limpiamente aquí:
                 // usuarioExistente.setTelefono(usuarioModificado.getTelefono());
 
-                usuarioRepository.save(usuarioExistente); // JPA hace el UPDATE en PostgreSQL
-                System.out.println("DEBUG UPDATE: Usuario actualizado en BD con éxito.");
+                usuarioRepository.save(usuarioExistente); // El ORM ejecuta un UPDATE limpio
+                System.out.println("DEBUG UPDATE: Registro de ID " + id + " actualizado en PostgreSQL.");
                 
-                return ResponseEntity.ok(Map.of("status", "success", "message", "Perfil actualizado en BD"));
+                return ResponseEntity.ok(Map.of("status", "success", "message", "Perfil actualizado con éxito en la base de datos"));
             } else {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of("status", "error", "message", "Usuario no encontrado"));
+                        .body(Map.of("status", "error", "message", "El ID de usuario especificado no existe"));
             }
         } catch (Exception e) {
             System.out.println("DEBUG UPDATE: Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("status", "error", "message", "Error interno en el servidor"));
+                    .body(Map.of("status", "error", "message", "Error interno en el servidor ferroviario"));
         }
     }
 }
