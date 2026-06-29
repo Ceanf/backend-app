@@ -14,85 +14,35 @@ public class Donacion {
     @Column(nullable = false)
     private Double monto;
 
-    @Column(nullable = false)
-    private LocalDateTime fecha;
+    private LocalDateTime fecha = LocalDateTime.now();
 
-    // Ej: "Comida", "Salud", "Infraestructura"
-    @Column(name = "tipo_impacto", nullable = false)
-    private String tipoImpacto;
-
-    // ==========================================
-    // RELACIÓN 1: Muchas Donaciones -> Un Usuario
-    // ==========================================
+    // 🔗 RELACIÓN: Muchas donaciones pueden ser hechas por un mismo Usuario
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    // ==========================================
-    // RELACIÓN 2: Muchas Donaciones -> Un Albergue
-    // ==========================================
+    // 🔗 RELACIÓN: Muchas donaciones pueden ir destinadas a una misma Campaña
     @ManyToOne
-    @JoinColumn(name = "albergue_id", nullable = false)
-    private Albergue albergue;
+    @JoinColumn(name = "campana_id", nullable = false)
+    private Campana campana;
 
-    // Constructores
-    public Donacion() {
-    }
+    public Donacion() {}
 
-    public Donacion(Double monto, LocalDateTime fecha, String tipoImpacto, Usuario usuario, Albergue albergue) {
+    public Donacion(Double monto, Usuario usuario, Campana campana) {
         this.monto = monto;
-        this.fecha = fecha;
-        this.tipoImpacto = tipoImpacto;
         this.usuario = usuario;
-        this.albergue = albergue;
+        this.campana = campana;
     }
 
     // Getters y Setters
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public Double getMonto() {
-        return monto;
-    }
-
-    public void setMonto(Double monto) {
-        this.monto = monto;
-    }
-
-    public LocalDateTime getFecha() {
-        return fecha;
-    }
-
-    public void setFecha(LocalDateTime fecha) {
-        this.fecha = fecha;
-    }
-
-    public String getTipoImpacto() {
-        return tipoImpacto;
-    }
-
-    public void setTipoImpacto(String tipoImpacto) {
-        this.tipoImpacto = tipoImpacto;
-    }
-
-    public Usuario getUsuario() {
-        return usuario;
-    }
-
-    public void setUsuario(Usuario usuario) {
-        this.usuario = usuario;
-    }
-
-    public Albergue getAlbergue() {
-        return albergue;
-    }
-
-    public void setAlbergue(Albergue albergue) {
-        this.albergue = albergue;
-    }
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+    public Double getMonto() { return monto; }
+    public void setMonto(Double monto) { this.monto = monto; }
+    public LocalDateTime getFecha() { return fecha; }
+    public void setFecha(LocalDateTime fecha) { this.fecha = fecha; }
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public Campana getCampana() { return campana; }
+    public void setCampana(Campana campana) { this.campana = campana; }
 }
